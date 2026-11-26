@@ -11,16 +11,31 @@ SPAM_PATTERNS = [
 INVISIBLE = re.compile(r"[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]")
 
 
+def display(text: str | None, limit: int = 40) -> str:
+    """Safe-to-show version of an attacker-controlled token name: no invisible or control characters, capped length."""
+    s = INVISIBLE.sub("", text or "")
+    s = "".join(ch for ch in s if ch.isprintable())
+    return s if len(s) <= limit else s[:limit] + "…"
+
+
 def spam_reasons(token: dict) -> list[str]:
     text = f"{token.get('name', '')} {token.get('symbol', '')}"
     reasons = []
+    for r in token.get("spamReasons") or []:  # found by scan_wallet on the raw name
+        if isinstance(r, str) and r not in reasons:
+            reasons.append(r)
+    def add(r: str) -> None:
+        if r not in reasons:
+            reasons.append(r)
     if INVISIBLE.search(text):
-        reasons.append("name hides invisible characters")
+        add("name hides invisible characters")
     if any(ch.isalpha() and not ch.isascii() for ch in text):
-        reasons.append("name uses lookalike letters from other alphabets (fake ticker)")
+        add("name uses lookalike letters from other alphabets (fake ticker)")
+    if len(text) > 80:
+        add("name is unusually long (may carry a message or instructions)")
     for p in SPAM_PATTERNS:
         if re.search(p, text, re.I):
-            reasons.append(f"name matches spam pattern '{p}'")
+            add(f"name matches spam pattern '{p}'")
             break
     if token.get("reputation") in ("scam", "spam"):
         reasons.append("flagged by explorer")
@@ -35,7 +50,8 @@ def classify(tokens: list[dict], gas_cost_native_wei: int, min_profit_ratio: flo
     """
     buckets = {"recover": [], "ignore": [], "quarantine": []}
     for t in tokens:
-        item = {k: t.get(k) for k in ("symbol", "name", "contractAddress", "rawAmount", "decimals")}
+        item = {k: t.get(k) for k in ("contractAddress", "rawAmount", "decimals")}
+        item["symbol"], item["name"] = display(t.get("symbol")), display(t.get("name"))
         spam = spam_reasons(t)
         q = t.get("quoteToNativeWei")
         if spam:
