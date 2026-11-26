@@ -15,7 +15,14 @@ from mcp.server.fastmcp import FastMCP
 
 from . import chain, hygiene
 
-DATA = Path(__file__).resolve().parent.parent / "data"
+def _data_dir() -> Path:
+    if os.environ.get("DUSTPAN_DATA_DIR"):
+        return Path(os.environ["DUSTPAN_DATA_DIR"]).expanduser()
+    checkout = Path(__file__).resolve().parent.parent / "data"  # a cloned checkout that already has data
+    return checkout if checkout.is_dir() else Path.home() / ".dustpan"
+
+
+DATA = _data_dir()
 CONTACTS = DATA / "contacts.json"
 BLOCKLIST = DATA / "blocklist.json"
 

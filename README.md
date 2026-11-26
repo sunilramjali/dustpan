@@ -21,7 +21,7 @@ Every swap and send is still signed by tapping your Tangem card. Dustpan itself 
    ```
 2. **Register both MCP servers** (run inside the `dustpan` folder):
    ```bash
-   claude mcp add --scope local -e ETHERSCAN_API_KEY=<your key> dustpan -- uv run --directory "$PWD" dustpan
+   claude mcp add --scope local dustpan -e ETHERSCAN_API_KEY=<your key> -- uv run --directory "$PWD" dustpan
    claude mcp add --transport http --scope local tangem https://mcp.tangem.org/mcp
    ```
 3. **Connect your wallet:** start `claude`, type `/mcp`, pick **tangem**, choose Authenticate, then approve in the Tangem app.
