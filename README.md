@@ -2,44 +2,112 @@
 
 > Tangem makes sure a human approves. Dustpan makes sure the human knows what they're approving.
 
-A wallet-hygiene agent that runs next to the [Tangem MCP](https://mcp.tangem.org/). Ask it to "clean my wallet" and it sorts every token into three buckets:
+Dustpan is a helper for your Tangem wallet that works inside Claude. Ask it to **"clean my wallet"** and it sorts every token you hold into three groups:
 
-1. **Recover:** dust worth swapping, ranked by the real Tangem swap quote (value after slippage and gas).
-2. **Ignore:** dust that costs more in gas than it's worth.
-3. **Quarantine:** spam tokens, plus **address-poisoning lookalikes** found in history (same first 4 and last 4 characters as an address you trust). They go on a blocklist, and a send guard refuses future sends to them.
+1. **Recover:** small leftover balances ("dust") that are worth swapping back to ETH, after fees.
+2. **Ignore:** balances so small that the fee to move them costs more than they're worth.
+3. **Quarantine:** scam tokens, plus **fake lookalike addresses** that scammers planted in your history. These look like someone you pay (same first 4 and last 4 characters) but belong to a scammer. Dustpan remembers them and refuses to let Claude send money to them.
 
-Every swap and send is still signed by tapping your Tangem card. Dustpan itself only reads public chain data and never signs anything.
+Dustpan only reads public blockchain data. It never holds your keys and never signs anything: every swap and payment still needs you to approve it by tapping your Tangem card.
 
-## Use it with your Tangem
+---
 
-**You need:** the Tangem app (6.8.1 or later) with your card, [Claude Code](https://claude.com/claude-code), [uv](https://docs.astral.sh/uv/), and a free [Etherscan API key](https://etherscan.io/apis).
+## Setup guide (about 10 minutes)
 
-1. **Get the code**
-   ```bash
-   git clone <this repo> dustpan && cd dustpan
-   uv sync
-   ```
-2. **Register both MCP servers** (run inside the `dustpan` folder):
-   ```bash
-   claude mcp add --scope local dustpan -e ETHERSCAN_API_KEY=<your key> -- uv run --directory "$PWD" dustpan
-   claude mcp add --transport http --scope local tangem https://mcp.tangem.org/mcp
-   ```
-3. **Connect your wallet:** start `claude`, type `/mcp`, pick **tangem**, choose Authenticate, then approve in the Tangem app.
-   In the app, add the networks you use (e.g. Arbitrum One) and turn off dynamic addresses.
-4. **Save the people you pay** so Dustpan can spot lookalikes of them:
-   > Save Alice as a contact: 0x…
-5. **Try it:**
-   - `Clean my wallet` shows the three buckets and a 0-100 hygiene score.
-   - `Recover the <token>` creates the swap; you approve it on your card.
-   - `Pay 0.01 ETH to 0x…` runs the send guard first and refuses known lookalikes.
+### What you need
 
-Dustpan tells Claude how to chain its tools with Tangem's, so this works from any folder.
+- A **Tangem card or ring** and the **Tangem app** (version 6.8.1 or later) on your phone.
+- A computer (Mac, Windows or Linux) with **[Claude Code](https://claude.com/claude-code)** installed.
+- **uv**, a small tool that runs Dustpan for you. Install it from [docs.astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/) (on a Mac with Homebrew: `brew install uv`).
+- A free **Etherscan API key**. Dustpan uses it to read your wallet history.
 
-**Networks:** Ethereum and Arbitrum One work with a free Etherscan key. Base needs a paid Etherscan plan; without a key Dustpan falls back to Blockscout, which can be flaky.
+### Step 1: Get a free Etherscan key
 
-Your contacts (`data/contacts.json`) and blocklist (`data/blocklist.json`) stay on your machine and are gitignored.
+1. Go to [etherscan.io/apis](https://etherscan.io/apis) and create a free account.
+2. In your account, open **API Keys** and click **Add**.
+3. Copy the key. It looks like a long string of letters and numbers.
 
-## Tools
+### Step 2: Add Dustpan and Tangem to Claude
+
+Open a terminal and paste these two commands. Replace `YOUR_KEY` with the key from step 1.
+
+```bash
+claude mcp add --scope user dustpan -e ETHERSCAN_API_KEY=YOUR_KEY -- uvx --from git+https://github.com/sunilramjali/dustpan dustpan
+claude mcp add --transport http --scope user tangem https://mcp.tangem.org/mcp
+```
+
+The first command adds Dustpan, and the second adds Tangem's official connection. `--scope user` means both work from any folder.
+
+### Step 3: Prepare the Tangem app
+
+On your phone, in the Tangem app:
+
+1. Add the networks you use, for example **Arbitrum One** or **Ethereum**.
+2. Turn off **dynamic addresses**, so your wallet keeps one fixed address.
+
+### Step 4: Connect your wallet to Claude
+
+1. In the terminal, type `claude` and press Enter.
+2. Type `/mcp` and press Enter.
+3. Choose **tangem**, then **Authenticate**.
+4. Approve the request in the Tangem app on your phone.
+
+Back in `/mcp`, both **tangem** and **dustpan** should now show as connected.
+
+### Step 5: Save the people you pay
+
+Dustpan spots fakes by comparing addresses to people you trust. Tell Claude about them in plain words:
+
+> Save Alice as a contact: 0x1234…abcd
+
+(Anyone you've already sent money to counts as trusted automatically.)
+
+### Step 6: Use it
+
+Just ask Claude in normal language:
+
+| Say this | What happens |
+|---|---|
+| **Clean my wallet** | You get the three groups (Recover / Ignore / Quarantine) and a 0–100 wallet health score. |
+| **Clean my wallet on Ethereum** | Same, for a different network. Arbitrum One is the default. |
+| **Recover the GMX** (any token from the Recover list) | Claude sets up the swap. Your phone asks you to approve, and you tap your card. |
+| **Pay 0.01 ETH to Alice** | Dustpan checks the address first. If it's a known fake, Claude refuses and shows you both addresses side by side. |
+
+---
+
+## Good to know
+
+- **Networks:** Ethereum and Arbitrum One work with the free Etherscan key. Base needs a paid Etherscan plan.
+- **Your data stays on your computer.** Contacts and the list of blocked addresses are saved in a `.dustpan` folder in your home folder.
+- **Always read the approval screen** on your phone before tapping your card. Dustpan makes scams much easier to spot, but your tap is the final check.
+- **Built and tested with Claude Code.**
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `/mcp` shows **tangem: Needs authentication** | Repeat step 4 and approve on your phone. |
+| **dustpan** shows as failed | Check that uv is installed (`uv --version`), then restart Claude. |
+| "Etherscan could not read … history" | Check your key in step 2. On Base, you need a paid Etherscan plan. |
+| "Max calls per sec rate limit reached" | Dustpan retries automatically. If it still fails, wait a few seconds and ask again. |
+| A token you hold doesn't appear | Dustpan looks at recent history (the last 200 transfers). |
+
+## Updating or removing
+
+- **Update to the latest version:** `uv cache clean dustpan`, then restart Claude.
+- **Remove:** `claude mcp remove dustpan -s user` (and `claude mcp remove tangem -s user` if you also want to disconnect Tangem).
+
+---
+
+## For developers
+
+To change the code, clone the repo and point Claude at your copy instead:
+
+```bash
+git clone https://github.com/sunilramjali/dustpan && cd dustpan
+uv sync
+claude mcp add --scope user dustpan -e ETHERSCAN_API_KEY=YOUR_KEY -- uv run --directory "$PWD" dustpan
+```
 
 | Tool | What it does |
 |---|---|
@@ -48,6 +116,8 @@ Your contacts (`data/contacts.json`) and blocklist (`data/blocklist.json`) stay 
 | `gas_price(network)` | Current gas price, to cost a swap from the Tangem quote |
 | `check_recipient(to_address)` | Send guard: ALLOW or BLOCK, called before every Tangem send |
 | `add_contact(name, address)` | Saves a trusted contact |
+
+Data folder: `~/.dustpan` (override with the `DUSTPAN_DATA_DIR` environment variable).
 
 Idea credit: the dust-recovery idea came from a fellow hacker at the Encode x Tangem MCP hackathon.
 
