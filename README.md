@@ -8,7 +8,59 @@ Dustpan is a helper for your Tangem wallet that works inside Claude. Ask it to *
 2. **Ignore:** balances so small that the fee to move them costs more than they're worth.
 3. **Quarantine:** scam tokens, plus **fake lookalike addresses** that scammers planted in your history. These look like someone you pay (same first 4 and last 4 characters) but belong to a scammer. Dustpan remembers them and refuses to let Claude send money to them.
 
+<p align="center">
+  <img src="docs/lookalike.svg" alt="A real contact address and a scammer's lookalike: same first 4 and last 4 characters, different middle. Dustpan allows the real one and blocks the fake." width="760">
+</p>
+
 Dustpan only reads public blockchain data. It never holds your keys and never signs anything: every swap and payment still needs you to approve it by tapping your Tangem card.
+
+## How it works
+
+```mermaid
+flowchart LR
+    You(["🧑 You"]) -- "Clean my wallet" --> Claude["Claude"]
+    Claude -- "what's in this wallet?<br/>is this address safe?" --> Dustpan["🧹 Dustpan<br/>(on your computer)"]
+    Dustpan -- "reads public history" --> Chain[("Etherscan<br/>public blockchain data")]
+    Claude -- "balances, swap quotes,<br/>swaps and payments" --> Tangem["Tangem connection"]
+    Tangem -- "approval request" --> Phone["📱 Tangem app"]
+    Phone -- "you tap your card" --> Card["💳 Tangem card"]
+```
+
+Dustpan only advises. Nothing moves until you approve it on your phone and tap your card.
+
+### How each token gets sorted
+
+```mermaid
+flowchart TD
+    T["A token in your wallet"] --> S{"Looks like a scam?<br/>(fake letters, a website or<br/>'claim reward' in its name…)"}
+    S -- yes --> Q["🚫 Quarantine<br/>never approve or swap it"]
+    S -- no --> R{"Can Tangem swap it<br/>back to ETH?"}
+    R -- no --> I["🤷 Ignore"]
+    R -- yes --> V{"Worth at least 3× the fee<br/>to swap it?"}
+    V -- no --> I
+    V -- yes --> C["✅ Recover<br/>swap it back to ETH"]
+```
+
+### What happens when you pay someone
+
+```mermaid
+sequenceDiagram
+    actor You
+    participant Claude
+    participant Dustpan
+    participant Tangem as Tangem app + card
+    You->>Claude: Pay 0.01 ETH to Alice
+    Claude->>Dustpan: Is Alice's address safe?
+    alt Address is a known lookalike
+        Dustpan-->>Claude: BLOCK
+        Claude-->>You: Refuses, shows both addresses side by side
+    else Address is fine
+        Dustpan-->>Claude: ALLOW
+        Claude->>Tangem: Prepare the payment
+        Tangem-->>You: Approval screen on your phone
+        You->>Tangem: Check it, tap your card
+    end
+```
 
 ---
 

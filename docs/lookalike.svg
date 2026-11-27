@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" width="760" height="250" role="img" aria-labelledby="t d">
+  <title id="t">A lookalike address next to the real one</title>
+  <desc id="d">Both addresses share the same first four and last four characters, 7f3a and b9cd, but every character in the middle is different. The second one belongs to a scammer.</desc>
+  <style>
+    .bg { fill: #ffffff; stroke: #d0d7de; }
+    .label { font: 600 14px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; letter-spacing: .04em; }
+    .addr { font: 20px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #8c959f; }
+    .match { fill: #1a7f37; font-weight: 700; }
+    .real { fill: #24292f; }
+    .fake { fill: #cf222e; }
+    .tag-ok { fill: #1a7f37; }
+    .tag-bad { fill: #cf222e; }
+    .tagtext { font: 700 13px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #ffffff; }
+    .note { font: 15px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #24292f; }
+    .rule { stroke: #d0d7de; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; stroke: #30363d; }
+      .label { fill: #8b949e; }
+      .addr { fill: #6e7681; }
+      .match { fill: #3fb950; }
+      .real { fill: #e6edf3; }
+      .fake { fill: #ff7b72; }
+      .tag-ok { fill: #238636; }
+      .tag-bad { fill: #da3633; }
+      .note { fill: #e6edf3; }
+      .rule { stroke: #30363d; }
+    }
+  </style>
+  <rect class="bg" x="1" y="1" width="758" height="248" rx="12"/>
+
+  <text class="label" x="32" y="42">ALICE (SAVED CONTACT)</text>
+  <rect class="tag-ok" x="620" y="26" width="108" height="24" rx="12"/>
+  <text class="tagtext" x="674" y="43" text-anchor="middle">ALLOW</text>
+  <text class="addr" x="32" y="78">0x<tspan class="match">7f3a</tspan><tspan class="real">9c21e84b06d5fa1290c3be47d81a2e65</tspan><tspan class="match">b9cd</tspan></text>
+
+  <line class="rule" x1="32" y1="104" x2="728" y2="104"/>
+
+  <text class="label" x="32" y="136">PLANTED IN YOUR HISTORY BY A SCAMMER</text>
+  <rect class="tag-bad" x="620" y="120" width="108" height="24" rx="12"/>
+  <text class="tagtext" x="674" y="137" text-anchor="middle">BLOCK</text>
+  <text class="addr" x="32" y="172">0x<tspan class="match">7f3a</tspan><tspan class="fake">04eb5d6fc1192a83e7f05dd2c6493a10</tspan><tspan class="match">b9cd</tspan></text>
+
+  <text class="note" x="32" y="216">Wallets often show only the first and last 4 characters, so both look like</text>
+  <text class="note" x="32" y="236"><tspan font-family="ui-monospace, Menlo, Consolas, monospace">0x7f3a…b9cd</tspan>. Dustpan compares the whole address and blocks the fake.</text>
+</svg>
